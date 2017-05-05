@@ -10,11 +10,13 @@ static int asc_comp_fn(const void *a, const void *b) {
 }
 
 static int bin_lower_bound(long **a, int lo, int hi, long x) {
+  int mid;
+
   if (lo > hi) {
     return lo;
   }
 
-  int mid = lo + (hi - lo) / 2;
+  mid = lo + (hi - lo) / 2;
   if (a[mid][0] == x) {
     return bin_lower_bound(a, lo, mid - 1, x);
   } else if (a[mid][0] > x) {
@@ -25,11 +27,13 @@ static int bin_lower_bound(long **a, int lo, int hi, long x) {
 }
 
 static int bin_upper_bound(long **a, int lo, int hi, long x) {
+  int mid;
+
   if (lo > hi) {
     return lo;
   }
 
-  int mid = lo + (hi - lo) / 2;
+  mid = lo + (hi - lo) / 2;
   if (a[mid][0] == x) {
     return bin_upper_bound(a, mid + 1, hi, x);
   } else if (a[mid][0] > x) {
@@ -42,9 +46,11 @@ static int bin_upper_bound(long **a, int lo, int hi, long x) {
 // ============== BUILD AND FREE FUNCTIONS ==============
 
 static void build_c_arr(long ***c_arr, VALUE *rb_array, int *len) {
+  int i;
   *len = (int) rb_array_len(*rb_array);
   *c_arr = (long **) malloc(*len * sizeof(long *));
-  for (int i = 0; i < *len; i++) {
+
+  for (i = 0; i < *len; i++) {
     (*c_arr)[i] = (long *) malloc(2 * sizeof(long));
     (*c_arr)[i][0] = FIX2LONG(rb_ary_entry(*rb_array, i));
     (*c_arr)[i][1] = i;
@@ -54,17 +60,19 @@ static void build_c_arr(long ***c_arr, VALUE *rb_array, int *len) {
 }
 
 static void free_c_arr(long **c_arr, int len) {
-  for (int i = 0; i < len; i++) {
+  int i;
+  for (i = 0; i < len; i++) {
     free(c_arr[i]);
   }
   free(c_arr);
 }
 
 static void build_rb_arr(VALUE *r_arr, long **c_arr, int start, int finish, int index_mode) {
-  *r_arr = rb_ary_new2(finish - start);
+  int ci, ri;
   int c_arr_index = index_mode;
+  *r_arr = rb_ary_new2(finish - start);
 
-  for (int ci = start, ri = 0; ci < finish; ci++, ri++) {
+  for (ci = start, ri = 0; ci < finish; ci++, ri++) {
     rb_ary_store(*r_arr, ri, LONG2FIX(c_arr[ci][c_arr_index]));
   }
 }
@@ -74,41 +82,41 @@ static void build_rb_arr(VALUE *r_arr, long **c_arr, int start, int finish, int 
 // public filter functions
 
 static void lt_filter_with_mode(VALUE *input_rb_array, VALUE *max_value, int index_mode, VALUE *output_rb_array) {
-  int len;
+  int len, last;
   long **c_arr;
   build_c_arr(&c_arr, input_rb_array, &len);
 
-  int last = bin_lower_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
+  last = bin_lower_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
   build_rb_arr(output_rb_array, c_arr, 0, last, index_mode);
   free_c_arr(c_arr, len);
 }
 
 static void lte_filter_with_mode(VALUE *input_rb_array, VALUE *max_value, int index_mode, VALUE *output_rb_array) {
-  int len;
+  int len, last;
   long **c_arr;
   build_c_arr(&c_arr, input_rb_array, &len);
 
-  int last = bin_upper_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
+  last = bin_upper_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
   build_rb_arr(output_rb_array, c_arr, 0, last, index_mode);
   free_c_arr(c_arr, len);
 }
 
 static void gt_filter_with_mode(VALUE *input_rb_array, VALUE *max_value, int index_mode, VALUE *output_rb_array) {
-  int len;
+  int len, first;
   long **c_arr;
   build_c_arr(&c_arr, input_rb_array, &len);
 
-  int first = bin_upper_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
+  first = bin_upper_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
   build_rb_arr(output_rb_array, c_arr, first, len, index_mode);
   free_c_arr(c_arr, len);
 }
 
 static void gte_filter_with_mode(VALUE *input_rb_array, VALUE *max_value, int index_mode, VALUE *output_rb_array) {
-  int len;
+  int len, first;
   long **c_arr;
   build_c_arr(&c_arr, input_rb_array, &len);
 
-  int first = bin_lower_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
+  first = bin_lower_bound(c_arr, 0, len - 1, FIX2LONG(*max_value));
   build_rb_arr(output_rb_array, c_arr, first, len, index_mode);
   free_c_arr(c_arr, len);
 }
