@@ -47,7 +47,7 @@ static int bin_upper_bound(long **a, int lo, int hi, long x) {
 
 static void build_c_arr(long ***c_arr, VALUE *rb_array, int *len) {
   int i;
-  *len = (int) rb_array_len(*rb_array);
+  *len = (int) RARRAY_LEN(*rb_array);
   *c_arr = (long **) malloc(*len * sizeof(long *));
 
   for (i = 0; i < *len; i++) {

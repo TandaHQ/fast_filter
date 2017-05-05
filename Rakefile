@@ -7,4 +7,4 @@ Rake::ExtensionTask.new 'fast_filter' do |ext|
 end
 RSpec::Core::RakeTask.new(:spec)
 
-task default: :spec
+task default: [:compile, :spec]
